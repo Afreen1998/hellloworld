@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone-task
+spec:
+  params:
+    - name: task-pvc
+      description: the task pvc - this is the volume where the files (Dockerfile etc..) are expected to be
+    - name: git-repo
+      description: Repository that contains configuration files.
+    - name: continuous-delivery-context-secret
+      description: name of the configmap containing the continuous delivery pipeline context secrets
+      default: cd-secret
+  steps:
+    - name: git-clone-step
+      image: icr.io/continuous-delivery/pipeline/pipeline-base-image:2.23
+      workingDir: /artifacts
+      env:
+        - name: GIT_REPO
+          value: $(params.git-repo)
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: $(params.continuous-delivery-context-secret)
+              key: GIT_TOKEN
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          set -e -o pipefail
+          
+          echo "Cloning the repo where config files are stored"
+          echo "$GIT_REPO"
+          GIT_URL=$(echo "${GIT_REPO}" | sed -e "s/:\/\//:\/\/${GIT_TOKEN}@/g")
+          echo $GIT_URL
+          git clone $GIT_URL
+              
+      volumeMounts:
+        - mountPath: /artifacts
+          name: task-volume
+  volumes:
+    - name: task-volume
+      persistentVolumeClaim:
+        claimName: $(params.task-pvc)
+
+
+  

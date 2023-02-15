@@ -1,0 +1,11 @@
+{
+  "name": "hellowworld",
+  "version": "1.0.0",
+  "description": "Hello world app!",
+  "main": "app.js",
+  "scripts": {
+    "test": "node app.js"
+  },
+  "author": "Afrin Katageri",
+  "license": "ISC"
+}

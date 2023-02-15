@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworldapp
+  namespace: test
+  labels:
+    app: helloworldapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helloworldapp
+  template:
+    metadata:
+      labels:
+        app: helloworldapp
+    spec:
+      imagePullSecrets:
+        - name: pull-secret
+      containers:
+      - name: helloworldapp
+        image: us.icr.io/afrintest/helloworldapp
+        ports:
+        - containerPort: 3000
+
