@@ -1,0 +1,64 @@
+apiVersion: tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: trigger-template-static-scan
+spec:
+  params:
+    - name: git-repo
+      description: Git Repo Name
+    - name: cluster
+      description: Cluster name
+    - name: git-token
+      description: git token
+    - name: api-key
+      description: api key
+  resourcetemplates:
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cd-secret
+      type: Opaque
+      stringData:
+        API_KEY: $(params.api-key)
+        GIT_TOKEN: $(params.git-token)
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: pipelinerun-$(uid)-pvc
+      spec:
+        resources:
+          requests:
+            storage:  5Gi
+        volumeMode: Filesystem
+        accessModes:
+          - ReadWriteOnce
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        name: pipelinerun-$(uid)
+      spec:
+        pipelineRef:
+          name: pipeline-static-scan
+        params:
+          - name: pipeline-pvc
+            value: pipelinerun-$(uid)-pvc
+          - name: git-repo
+            value: $(params.git-repo)
+          - name: cluster
+            value: $(params.cluster)
+---
+apiVersion: tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: trigger-binding-static-scan
+---
+apiVersion: tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: event-listener-static-scan
+spec:
+  triggers:
+    - binding:
+        name: trigger-binding-static-scan
+      template:
+        name: trigger-template-static-scan

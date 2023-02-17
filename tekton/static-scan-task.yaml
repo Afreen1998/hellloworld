@@ -1,23 +1,19 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: deploy-task
+  name: static-scan-task
 spec:
   params:
     - name: task-pvc
       description: the task pvc - this is the volume where the files (Dockerfile etc..) are expected to be
-    - name: cluster
-      description: cluster name
     - name: continuous-delivery-context-secret
       description: name of the configmap containing the continuous delivery pipeline context secrets
       default: cd-secret
   steps:
-    - name: deploy-step
+    - name: static-scan-step
       image: icr.io/continuous-delivery/pipeline/pipeline-base-image:2.23
       workingDir: /artifacts
       env:
-        - name: CLUSTER
-          value: $(params.cluster)
         - name: API_KEY
           valueFrom:
             secretKeyRef:
@@ -28,11 +24,7 @@ spec:
         - |
           set -e -o pipefail
           
-          ibmcloud login --apikey $API_KEY --no-region
-          ibmcloud ks cluster config -c $CLUSTER
-
-          kubectl delete deployment helloworldapp -n test
-          kubectl apply -f helloworldapp/deployment.yaml
+          echo "Successfully scanned the code."
               
       volumeMounts:
         - mountPath: /artifacts

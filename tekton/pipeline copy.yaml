@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-static-scan
+spec:
+  params:
+    - name: pipeline-pvc
+      description: the pipeline pvc name
+    - name: git-repo
+    - name: cluster
+  tasks:
+    - name: git-clone-task
+      taskRef:
+        name: git-clone-task
+      params:
+        - name: task-pvc
+          value: $(params.pipeline-pvc)
+        - name: git-repo
+          value: $(params.git-repo)
+    - name: static-scan-task
+      taskRef:
+        name: static-scan-task
+      runAfter:
+        - git-clone-task
+      params:
+        - name: task-pvc
+          value: $(params.pipeline-pvc)
+    - name: docker-build-task
+      taskRef:
+        name: docker-build-task
+      runAfter:
+        - static-scan-task
+      params:
+        - name: task-pvc
+          value: $(params.pipeline-pvc)
+    - name: deploy-task
+      taskRef:
+        name: deploy-task
+      runAfter:
+        - docker-build-task
+      params:
+        - name: task-pvc
+          value: $(params.pipeline-pvc)
+        - name: cluster
+          value: $(params.cluster)
+        
